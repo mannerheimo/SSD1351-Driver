@@ -8,24 +8,28 @@ SSD1351 display = {
     .sck_pin = 18,
     .cs_pin = 17,
     .rst_pin = 15,
-    .dc_pin = 14
+    .dc_pin = 14,
+    .width = 128,
+    .height = 128
 };
 
 static SSD1351 *d = NULL;
+uint16_t framebuf[128][128];
 
 void setDisplaySize(SSD1351 *d) {
-    writeCommand()
-    /*writecommand set colums address
-    write data 0x00
-    write data 0x7f
-    sama row
+    writeCommand(d, SET_COLUMN_ADDRESS);
+    writeData(d, COLUMN_START_ADDRESS);
+    writeData(d, COLUMN_END_ADDRESS);
 
-    sit clear
-    */
+    writeCommand(d, SET_ROW_ADDRESS);
+    writeData(d, ROW_START_ADDRESS);
+    writeData(d, ROW_END_ADDRESS);
+    clearDisplay(d);
 }
 
 void clearDisplay(SSD1351 *d) {
-    
+    memset(framebuf, 0, 128*128);
+    writeRAM(d);
 }
 
 
@@ -46,6 +50,19 @@ void writeData(SSD1351 *d, uint8_t data) {
     gpio_put(d->cs_pin, 1);
 }
 
+void writeRAM(SSD1351 *d) {
+    writeCommand(d, WRITE_RAM_COMMAND);
+    writeData(d, framebuf);
+
+    for (int y = 0; y < d->height; y++) {
+        for (int x = 0; x < d->width; x++) {
+            uint8_t ls = framebuf[y][x];  
+            uint8_t msb = framebuf[y][x]; 
+        }
+    }
+}
+
+
 void initHardware(SSD1351 *d) {
 
     spi_init(d->spi, 1000*1000);
@@ -59,6 +76,8 @@ void initHardware(SSD1351 *d) {
     gpio_set_dir(d->rst_pin, GPIO_OUT);
     gpio_set_dir(d->dc_pin, GPIO_OUT);
     gpio_set_dir(d->cs_pin, GPIO_OUT);
+
+    setDisplaySize(d);
 }
 
 

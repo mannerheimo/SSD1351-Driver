@@ -14,6 +14,8 @@ int main()
     {
         sleep_ms(1000);
         writeCommand(&display, 0XA5);
+        sleep_ms(1000);
+        clearDisplay(1000);
     }
     
 
