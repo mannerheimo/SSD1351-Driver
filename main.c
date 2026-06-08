@@ -9,13 +9,13 @@ int main()
 
     initHardware(&display);
     initDisplay(&display);
-
+    setDisplaySize(&display);
     while (true)
     {
-        sleep_ms(1000);
-        writeCommand(&display, 0XA5);
-        sleep_ms(1000);
-        clearDisplay(1000);
+        sleep_ms(500);
+        fillColor(&display, RED);
+        sleep_ms(500);
+        fillColor(&display, BLUE);
     }
     
 

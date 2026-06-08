@@ -14,7 +14,22 @@ SSD1351 display = {
 };
 
 static SSD1351 *d = NULL;
-uint16_t framebuf[128][128];
+uint16_t framebuf[128][128]; //otherways to do?
+
+
+void fillColor(SSD1351 *d, uint16_t color) {
+    for (int y = 0; y < d->height; y++) {
+        for (int x = 0; x < d->width; x++) {
+            framebuf[y][x] = color;
+        }
+    }
+    writeRAM(d);
+}
+
+void setStartLine(SSD1351 *d) {
+    writeCommand(d, DISPLAY_START_LINE);
+    writeData(d, 0X00);
+}
 
 void setDisplaySize(SSD1351 *d) {
     writeCommand(d, SET_COLUMN_ADDRESS);
@@ -25,10 +40,11 @@ void setDisplaySize(SSD1351 *d) {
     writeData(d, ROW_START_ADDRESS);
     writeData(d, ROW_END_ADDRESS);
     clearDisplay(d);
+    setStartLine(d);
 }
 
 void clearDisplay(SSD1351 *d) {
-    memset(framebuf, 0, 128*128);
+    memset(framebuf, 0, sizeof(framebuf));
     writeRAM(d);
 }
 
@@ -52,12 +68,15 @@ void writeData(SSD1351 *d, uint8_t data) {
 
 void writeRAM(SSD1351 *d) {
     writeCommand(d, WRITE_RAM_COMMAND);
-    writeData(d, framebuf);
 
     for (int y = 0; y < d->height; y++) {
         for (int x = 0; x < d->width; x++) {
-            uint8_t ls = framebuf[y][x];  
-            uint8_t msb = framebuf[y][x]; 
+            uint16_t pixel = framebuf[y][x];
+
+            uint8_t msb = (pixel >> 8) & 0xFF;  
+            uint8_t lsb = pixel & 0xFF;
+            writeData(d, msb);
+            writeData(d, lsb); // should probably make a multibyte write func
         }
     }
 }
@@ -65,7 +84,7 @@ void writeRAM(SSD1351 *d) {
 
 void initHardware(SSD1351 *d) {
 
-    spi_init(d->spi, 1000*1000);
+    spi_init(d->spi, 5000*1000);
     gpio_set_function(d->mosi_pin, GPIO_FUNC_SPI);
     gpio_set_function(d->sck_pin, GPIO_FUNC_SPI);
 
@@ -98,6 +117,8 @@ void initDisplay(SSD1351 *d) {
     writeCommand(d, DISPLAY_ON);
     sleep_ms(200);
 
+    writeCommand(d, REMAP);
+    writeData(d, 0x01);
 }
 // init framebuffer, like 128x96xbits per pixel, this way we can blast full image immedietly
 // higher level commands for easy use

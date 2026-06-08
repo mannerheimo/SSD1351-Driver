@@ -10,11 +10,26 @@
 #define SET_COMMAND_LOCK 0xFD 
 #define UNLOCK_DRIVER 0x12
 #define DISPLAY_ON 0xAF
+#define SET_DISPLAY_OFFSET 0xA2
+#define SET_DISPLAY_OFF 0xA4 //pixels are turned off/black, regardless of ram content
+#define SET_DISPLAY_ON 0xA5 //all pixels are turned to white, regardless of ram
+#define SET_INVERSE_DISPLAY 0xA7 //inverse everything
+#define RESET_DISPLAY_NORMAL 0xA6 //returns to normal operation if the last 3 commands were used
+
+#define SET_SLEEP_ON 0xAE
+#define SET_SLEEP_OFF 0xAF
+#define DISPLAY_ENHANCEMENT 0xB2
 
 #define COLUMN_START_ADDRESS 0x00
 #define COLUMN_END_ADDRESS 0x7F
 #define ROW_START_ADDRESS 0x00
 #define ROW_END_ADDRESS 0x7F
+#define DISPLAY_START_LINE 0xA1
+#define REMAP 0xA0 // 0x00 = horizontal; 0x01 = vertical;
+
+#define BLUE 0xF800
+#define RED 0x001F
+#define GREEN 0x07E0
 
 typedef struct {
     uint mosi_pin;
@@ -38,3 +53,5 @@ void writeData(SSD1351 *d, uint8_t data);
 void setDisplaySize(SSD1351 *d);
 void clearDisplay(SSD1351 *d);
 void writeRAM(SSD1351 *d);
+void fillColor(SSD1351 *d, uint16_t color);
+void setStartLine(SSD1351 *d);
