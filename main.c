@@ -11,16 +11,12 @@ int main()
     initDisplay();
     setDisplaySize();
     
+
     fillColor(0xFFFF);
-
-
     while (true) {
         sleep_ms(1000);
         
-        //writeChar(20, 20, 0x00, 'A');
         writeString(0, 0, 0x0000, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam vitae augue sem. Phasellus et volutpat metus.");
-        writeRAM();
+        
     }    
-
-
 }

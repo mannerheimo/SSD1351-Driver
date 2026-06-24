@@ -32,6 +32,7 @@
 #define RED 0x001F
 #define GREEN 0x07E0
 #define DISPLAY_SIZE 128*96
+#define DISPLAY_SPI_SPEED 10000*1000
 
 typedef struct {
     uint mosi_pin;

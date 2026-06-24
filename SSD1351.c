@@ -40,9 +40,11 @@ void writeString(int x, int y, uint16_t color, char *str) {
             x = curr_x;
         }
     }
+    writeRAM();
 }
 
 void setPixel(int x, int y, uint16_t color) {
+    if (x < 0 || x > display.width - 1 || y < 0 || y > display.height) return;
     framebuf[y * display.width + x] = color;
 }
 
@@ -115,7 +117,7 @@ void writeRAM(void) {
 
 void initHardware() {
 
-    spi_init(display.spi, 10000*1000); // could prob push higher speed
+    spi_init(display.spi, DISPLAY_SPI_SPEED); // could prob push higher speed
     gpio_set_function(display.mosi_pin, GPIO_FUNC_SPI);
     gpio_set_function(display.sck_pin, GPIO_FUNC_SPI);
 
