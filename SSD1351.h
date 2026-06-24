@@ -55,3 +55,5 @@ void writeRAM();
 void fillColor(uint16_t color);
 void setStartLine();
 void setPixel(int x, int y, uint16_t color);
+void writeChar(int x, int y, uint16_t color, char chr);
+void writeString(int x, int y, uint16_t color, char *str);

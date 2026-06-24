@@ -1,4 +1,6 @@
 #include "SSD1351.h"
+#include "Fonts/font8x8_basic.h"
+
 //datasheet from below
 //https://www.waveshare.com/wiki/1.27inch_RGB_OLED_Module#Pinout
 
@@ -15,10 +17,33 @@ static SSD1351 display = {
 
 uint16_t framebuf[DISPLAY_SIZE];
 
+void writeChar(int x, int y, uint16_t color, char chr) { //implicit type conversion
+    if (chr < 0 || chr > 127) return; // prevent font8x8 out of bound 
+    for (int row = 0; row < 8; row++) { // loop trough each of the 8 rows of char bitmap
+
+        for (int col = 0; col < 8; col++){ // loop trough the 8 pixels/columns of the curr row
+            
+            if ((font8x8_basic[chr][row] >> col) & 1) { // check each bit, if 1 then draw  
+                setPixel(x + col, y + row, color);
+            }
+        }
+    }
+}
+
+void writeString(int x, int y, uint16_t color, char *str) {
+    int curr_x = x;
+    for (int i = 0; str[i] != '\0'; i++) {
+        writeChar(x, y, color, str[i]);
+        x += 8; // move next char 8 pixels right
+        if (x >= display.width) { // change to next row if going out of bounds of display.width
+            y += 8;
+            x = curr_x;
+        }
+    }
+}
 
 void setPixel(int x, int y, uint16_t color) {
     framebuf[y * display.width + x] = color;
-    writeRAM(); // poista testausten jälkee, liikaa kirjotus muute
 }
 
 void fillColor(uint16_t color) {
@@ -90,7 +115,7 @@ void writeRAM(void) {
 
 void initHardware() {
 
-    spi_init(display.spi, 10000*1000); // could prob push hihger speed
+    spi_init(display.spi, 10000*1000); // could prob push higher speed
     gpio_set_function(display.mosi_pin, GPIO_FUNC_SPI);
     gpio_set_function(display.sck_pin, GPIO_FUNC_SPI);
 
