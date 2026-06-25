@@ -4,6 +4,7 @@
 //datasheet from below
 //https://www.waveshare.com/wiki/1.27inch_RGB_OLED_Module#Pinout
 
+uint16_t framebuf[DISPLAY_SIZE];
 static SSD1351 display = {
     .spi = spi0,
     .mosi_pin = 19,
@@ -15,7 +16,25 @@ static SSD1351 display = {
     .height = 96
 };
 
-uint16_t framebuf[DISPLAY_SIZE];
+
+void writeBITMAP(int x, int y, const unsigned char *bitmap, int width, int height, uint16_t color) {
+    int byte_index = 0;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            uint16_t byte = bitmap[byte_index++];
+            for (int bit = 0; bit < 8; bit++) {
+                if ((byte >> bit) & 1) {
+                    if ((i*8) + bit < height) {
+                    setPixel(x + j, (i*8) + y + bit, color);
+                    }
+                }
+            }
+        }
+    }
+    
+    writeRAM();
+    
+}
 
 void writeChar(int x, int y, uint16_t color, char chr) { //implicit type conversion
     if (chr < 0 || chr > 127) return; // prevent font8x8 out of bound 

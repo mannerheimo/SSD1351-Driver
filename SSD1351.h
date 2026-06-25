@@ -32,7 +32,7 @@
 #define RED 0x001F
 #define GREEN 0x07E0
 #define DISPLAY_SIZE 128*96
-#define DISPLAY_SPI_SPEED 10000*1000
+#define DISPLAY_SPI_SPEED 15000*1000
 
 typedef struct {
     uint mosi_pin;
@@ -58,3 +58,7 @@ void setStartLine();
 void setPixel(int x, int y, uint16_t color);
 void writeChar(int x, int y, uint16_t color, char chr);
 void writeString(int x, int y, uint16_t color, char *str);
+void writeBITMAP(int x, int y, const unsigned char *bitmap, int width, int height, uint16_t color);
+
+
+
