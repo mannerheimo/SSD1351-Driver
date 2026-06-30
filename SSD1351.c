@@ -6,6 +6,11 @@
 //https://files.waveshare.com/upload/a/a7/SSD1351-Revision_1.5.pdf
 
 uint16_t framebuf[DISPLAY_SIZE];
+uint16_t framebuf2[DISPLAY_SIZE];
+// 2 buffers to maximize fps
+uint16_t *displaybuf = framebuf;
+uint16_t *drawbuf = framebuf2;
+
 static SSD1351 display = {
     .spi = spi0,
     .spi_tx_dma_channel = 0,
@@ -19,6 +24,14 @@ static SSD1351 display = {
     .width = 128,
     .height = 96
 };
+
+
+void displayUpdate() {
+    uint16_t *temp = drawbuf;
+    drawbuf = displaybuf;
+    displaybuf = temp;
+    writeRAM();
+}
 
 void initDMA() {
     display.spi_tx_dma_channel = dma_claim_unused_channel(true); 
@@ -64,7 +77,7 @@ void writeBITMAP(int x, int y, const unsigned char *bitmap, int width, int heigh
             }
         }
     }
-    writeRAM();
+    
     
 }
 
@@ -93,22 +106,22 @@ void writeString(int x, int y, uint16_t color, char *str) {
             x = curr_x; // go back to original x
         }
     }
-    writeRAM();
+    
 }
 
 // set x,y pixel in framebuf to whatever color. 
 // NOTE: if using this as standalone, you need to writeRAM to see changes in display.
 void setPixel(int x, int y, uint16_t color) {
     if (x < 0 || x > display.width - 1 || y < 0 || y > display.height) return;
-    framebuf[y * display.width + x] = color;
+    drawbuf[y * display.width + x] = color;
 }
 
 // fill display with color
 void fillColor(uint16_t color) {
     for (int i = 0; i < DISPLAY_SIZE; i++) {
-        framebuf[i] = color;
+        drawbuf[i] = color;
     }
-    writeRAM();
+    
 }
 
 void setStartLine() {
@@ -130,8 +143,8 @@ void setDisplaySize() {
 }
 
 void clearDisplay() {
-    memset(framebuf, 0, sizeof(framebuf));
-    writeRAM();
+    memset(drawbuf, 0, sizeof(framebuf));
+    
 }
 
 //writes command to driver
@@ -163,7 +176,7 @@ void writeRAM(void) {
     gpio_put(display.dc_pin, 1);
     
     // send framebuf to spi to ram
-    dma_channel_transfer_from_buffer_now(display.spi_tx_dma_channel, framebuf, display.dma_transfer_count); //tähän vaan se encoded transfer count ja sit pitäös olla kunnos, tee returnit docxygen
+    dma_channel_transfer_from_buffer_now(display.spi_tx_dma_channel, displaybuf, display.dma_transfer_count); //tähän vaan se encoded transfer count ja sit pitäös olla kunnos, tee returnit docxygen
     dma_channel_wait_for_finish_blocking(display.spi_tx_dma_channel); // wait until dma is done before next ram write
     while(spi_is_busy(display.spi)); // to catch the last bytes moving trough spi before cutting the writing
     gpio_put(display.cs_pin, 1);
@@ -171,7 +184,7 @@ void writeRAM(void) {
     
     /*
     this is alternative non DMA way to write to ram
-    loops trough framebuf pixel by pixel, and splits it into lsb, msb, writes them
+    loops trough framebuf pixel by pixel, and splits it into lsb, msb, writes
     for (int i = 0; i < DISPLAY_SIZE; i++) {
         uint16_t pixel = framebuf[i];
 

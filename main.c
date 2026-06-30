@@ -31,6 +31,7 @@ unsigned char binary_data[] = {
     0x00, 0x00, 0x00
     // font edit end
 };
+
 int main()
 {   
     stdio_init_all();
@@ -38,19 +39,32 @@ int main()
 
     initHardware();
     initDisplay();
-    initDMA(); // really fucking useful to have if you want to write stuff
+    initDMA();
     setDisplaySize();
     
 
     fillColor(0x0000);
+    displayUpdate();
     while (true) {
 
         
         //writeString(0, 0, 0xFFFF, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam vitae augue sem. Phasellus et volutpat metus.");
         //writeString(20, 20, 0x0000, binary_data);
-        writeBITMAP(20, 20, binary_data, 39, 39, 0xFFFF);
-        sleep_ms(200);
+        /*writeBITMAP(20, 20, binary_data, 39, 39, 0xFFFF);
+        sleep_ms(50);
         clearDisplay();
-        sleep_ms(200);
-    }    
-}
+        sleep_ms(50);
+        */
+
+
+        //51fps max
+        while (true) {
+            for (int x = -39; x <= 128; x += 2) {
+                clearDisplay();
+                writeBITMAP(x, 20, binary_data, 39, 39, 0xFFFF);
+                displayUpdate();
+                sleep_ms(10);
+            }
+        }
+    }
+}    

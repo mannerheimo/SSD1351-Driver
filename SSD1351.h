@@ -32,7 +32,7 @@
 #define ROW_END_ADDRESS 0x5F
 #define DISPLAY_START_LINE 0x00
 #define DISPLAY_SIZE 128*96 //pixels
-#define DISPLAY_SPI_SPEED 15000*1000
+#define DISPLAY_SPI_SPEED 25000*1000
 
 #define BLUE 0xF800
 #define RED 0x001F
@@ -69,6 +69,5 @@ void setPixel(int x, int y, uint16_t color);
 void writeChar(int x, int y, uint16_t color, char chr);
 void writeString(int x, int y, uint16_t color, char *str);
 void writeBITMAP(int x, int y, const unsigned char *bitmap, int width, int height, uint16_t color);
-
-
+void displayUpdate();
 
