@@ -70,6 +70,7 @@ target_link_libraries(SSD1351
         pico_cyw43_arch_none
         hardware_gpio
         pico_stdlib
+        hardware_dma
         )
 
 pico_add_extra_outputs(SSD1351)

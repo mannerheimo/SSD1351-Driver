@@ -38,15 +38,19 @@ int main()
 
     initHardware();
     initDisplay();
+    initDMA(); // really fucking useful to have if you want to write stuff
     setDisplaySize();
     
 
-    fillColor(0xFFFF);
+    fillColor(0x0000);
     while (true) {
-        sleep_ms(1000);
+
         
         //writeString(0, 0, 0xFFFF, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam vitae augue sem. Phasellus et volutpat metus.");
         //writeString(20, 20, 0x0000, binary_data);
-        writeBITMAP(20, 20, binary_data, 39, 39, 0x0000);
+        writeBITMAP(20, 20, binary_data, 39, 39, 0xFFFF);
+        sleep_ms(200);
+        clearDisplay();
+        sleep_ms(200);
     }    
 }

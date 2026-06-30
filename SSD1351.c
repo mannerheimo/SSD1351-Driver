@@ -3,10 +3,14 @@
 
 //datasheet from below
 //https://www.waveshare.com/wiki/1.27inch_RGB_OLED_Module#Pinout
+//https://files.waveshare.com/upload/a/a7/SSD1351-Revision_1.5.pdf
 
 uint16_t framebuf[DISPLAY_SIZE];
 static SSD1351 display = {
     .spi = spi0,
+    .spi_tx_dma_channel = 0,
+    .dma_transfer_count = 0,
+    .total_bytes = DISPLAY_SIZE * 2,
     .mosi_pin = 19,
     .sck_pin = 18,
     .cs_pin = 17,
@@ -16,29 +20,58 @@ static SSD1351 display = {
     .height = 96
 };
 
+void initDMA() {
+    display.spi_tx_dma_channel = dma_claim_unused_channel(true); 
+    dma_channel_config dma_channel_config = dma_channel_get_default_config(display.spi_tx_dma_channel);
 
+    channel_config_set_transfer_data_size(&dma_channel_config, DMA_SIZE_8);
+    channel_config_set_dreq(&dma_channel_config, DREQ_SPI0_TX);
+    channel_config_set_read_increment(&dma_channel_config, true);
+    channel_config_set_write_increment(&dma_channel_config, false);
+
+    dma_channel_set_config(display.spi_tx_dma_channel, &dma_channel_config, false);
+
+
+    dma_channel_configure(
+        display.spi_tx_dma_channel, 
+        &dma_channel_config, 
+        &spi_get_hw(display.spi)->dr,
+        NULL, 
+        0, 
+        false
+    );
+
+    display.dma_transfer_count = dma_encode_transfer_count(display.total_bytes);
+
+}
+
+
+// this function allows drawing bitmaps to display, vlsb (vertical least significant bit)
 void writeBITMAP(int x, int y, const unsigned char *bitmap, int width, int height, uint16_t color) {
     int byte_index = 0;
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
+
+    for (int i = 0; i < height; i++) { // looping trought the rows horiz
+        for (int j = 0; j < width; j++) { // looping each pixel vertically
             uint16_t byte = bitmap[byte_index++];
-            for (int bit = 0; bit < 8; bit++) {
-                if ((byte >> bit) & 1) {
-                    if ((i*8) + bit < height) {
-                    setPixel(x + j, (i*8) + y + bit, color);
+
+            for (int bit = 0; bit < 8; bit++) { // looping trough each bit of the byte
+
+                if ((byte >> bit) & 1) { // if bit 1, then turn on pixel
+                    if ((i*8) + bit < height) { 
+                    setPixel(x + j, (i*8) + y + bit, color); 
                     }
                 }
             }
         }
     }
-    
     writeRAM();
     
 }
 
+// draws charachter at x,y pos. for supported charachters, see font8x8_basic.h
 void writeChar(int x, int y, uint16_t color, char chr) { //implicit type conversion
-    if (chr < 0 || chr > 127) return; // prevent font8x8 out of bound 
-    for (int row = 0; row < 8; row++) { // loop trough each of the 8 rows of char bitmap
+    if (chr < 0 || chr > 127) return;
+    for (int row = 0; row < 8; row++) { // loop trough each of the 8 rows of (char bitmap)
 
         for (int col = 0; col < 8; col++){ // loop trough the 8 pixels/columns of the curr row
             
@@ -115,11 +148,23 @@ void writeData(uint8_t data) {
 }
 
 void writeRAM(void) {
+    while (dma_channel_is_busy(display.spi_tx_dma_channel));
+        
+
     writeCommand(WRITE_RAM_COMMAND);
 
     gpio_put(display.cs_pin, 0);
-    gpio_put(display.dc_pin, 1);
 
+    gpio_put(display.dc_pin, 1);
+    
+
+    dma_channel_set_read_addr(display.spi_tx_dma_channel, framebuf, false);
+    dma_channel_transfer_from_buffer_now(display.spi_tx_dma_channel, framebuf, display.dma_transfer_count); //tähän vaan se encoded transfer count ja sit pitäös olla kunnos, tee returnit docxygen
+    dma_channel_wait_for_finish_blocking(display.spi_tx_dma_channel);
+    while(spi_is_busy(display.spi)); // spi reg 
+    gpio_put(display.cs_pin, 1);
+
+    /*
     for (int i = 0; i < DISPLAY_SIZE; i++) {
         uint16_t pixel = framebuf[i];
 
@@ -129,8 +174,9 @@ void writeRAM(void) {
         spi_write_blocking(display.spi, &msb, 1);
         spi_write_blocking(display.spi, &lsb, 1);
     }
-
-    gpio_put(display.cs_pin, 1);
+        gpio_put(display.cs_pin, 1); 
+    */
+    
 }
 
 
