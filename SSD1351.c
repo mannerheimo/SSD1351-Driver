@@ -82,24 +82,28 @@ void writeChar(int x, int y, uint16_t color, char chr) { //implicit type convers
     }
 }
 
+//draws string to display, using writeChar function. 
 void writeString(int x, int y, uint16_t color, char *str) {
     int curr_x = x;
     for (int i = 0; str[i] != '\0'; i++) {
         writeChar(x, y, color, str[i]);
         x += 8; // move next char 8 pixels right
         if (x >= display.width) { // change to next row if going out of bounds of display.width
-            y += 8;
-            x = curr_x;
+            y += 8; // move next char/string 8 pixels down
+            x = curr_x; // go back to original x
         }
     }
     writeRAM();
 }
 
+// set x,y pixel in framebuf to whatever color. 
+// NOTE: if using this as standalone, you need to writeRAM to see changes in display.
 void setPixel(int x, int y, uint16_t color) {
     if (x < 0 || x > display.width - 1 || y < 0 || y > display.height) return;
     framebuf[y * display.width + x] = color;
 }
 
+// fill display with color
 void fillColor(uint16_t color) {
     for (int i = 0; i < DISPLAY_SIZE; i++) {
         framebuf[i] = color;
@@ -113,10 +117,11 @@ void setStartLine() {
 }
 
 void setDisplaySize() {
+    //sets width 0-127
     writeCommand(SET_COLUMN_ADDRESS);
     writeData(COLUMN_START_ADDRESS);
     writeData(COLUMN_END_ADDRESS);
-
+    //sets height/row 0-95
     writeCommand(SET_ROW_ADDRESS);
     writeData(ROW_START_ADDRESS);
     writeData(ROW_END_ADDRESS);
@@ -129,7 +134,7 @@ void clearDisplay() {
     writeRAM();
 }
 
-
+//writes command to driver
 void writeCommand(uint8_t cmd) {
     gpio_put(display.cs_pin, 0);
     gpio_put(display.dc_pin, 0);
@@ -138,7 +143,7 @@ void writeCommand(uint8_t cmd) {
     gpio_put(display.cs_pin, 1);
 }
 
-
+//write data to driver
 void writeData(uint8_t data) {
     gpio_put(display.cs_pin, 0);
     gpio_put(display.dc_pin, 1);
@@ -147,24 +152,26 @@ void writeData(uint8_t data) {
     gpio_put(display.cs_pin, 1);
 }
 
+/*
+when writing to drivers ram, DMA is utilized to transfer framebuffer to spi.
+*/
 void writeRAM(void) {
-    while (dma_channel_is_busy(display.spi_tx_dma_channel));
-        
-
+    while (dma_channel_is_busy(display.spi_tx_dma_channel)); // can't have writing happening at the same time
+    
     writeCommand(WRITE_RAM_COMMAND);
-
     gpio_put(display.cs_pin, 0);
-
     gpio_put(display.dc_pin, 1);
     
-
-    dma_channel_set_read_addr(display.spi_tx_dma_channel, framebuf, false);
+    // send framebuf to spi to ram
     dma_channel_transfer_from_buffer_now(display.spi_tx_dma_channel, framebuf, display.dma_transfer_count); //tähän vaan se encoded transfer count ja sit pitäös olla kunnos, tee returnit docxygen
-    dma_channel_wait_for_finish_blocking(display.spi_tx_dma_channel);
-    while(spi_is_busy(display.spi)); // spi reg 
+    dma_channel_wait_for_finish_blocking(display.spi_tx_dma_channel); // wait until dma is done before next ram write
+    while(spi_is_busy(display.spi)); // to catch the last bytes moving trough spi before cutting the writing
     gpio_put(display.cs_pin, 1);
 
+    
     /*
+    this is alternative non DMA way to write to ram
+    loops trough framebuf pixel by pixel, and splits it into lsb, msb, writes them
     for (int i = 0; i < DISPLAY_SIZE; i++) {
         uint16_t pixel = framebuf[i];
 
