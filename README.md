@@ -41,12 +41,18 @@ add
 
 ## API reference
 ```
-initDMA(); // initializes DMA
-initHardware(); // initializes GPIOS
-initDisplay(); // initializes display sequence and sets the screen size and other required settings
+initDMA(); // Initializes the hardware DMA channel configuration.
+initHardware(); // Configures the hardware SPI peripheral and GPIO directions.
+initDisplay(); // Runs the startup sequence, sets column/row boundaries, and powers on the panel.
 
+fillColor(uint16_t color); // Fills the entire active drawbuf with a specific 16-bit color.
+clearDisplay(); // Flushes the active drawbuf back to raw zeros (black).
+setPixel(int x, int y, uint16_t color); // Sets a specific pixel in the drawbuf.
+writeChar(int x, int y, uint16_t color, char chr); // Renders a single 8x8 character into the drawbuf using data from font8x8_basic.h.
+writeString(int x, int y, uint16_t color, char *str); // Renders an entire string, spacing letters by 8 pixels and wrapping lines automatically.
+writeBITMAP(int x, int y, const unsigned char *bitmap, int width, int height, uint16_t color); // Decodes and draws a custom VLSB bitmap into the drawbuf.
 
-
+displayUpdate(); // Swaps the drawing and displaying buffers, commands the display to receive data, and blocks until the DMA/SPI pipelines empty to guarantee a safe transfer.
 ```   
     
     
